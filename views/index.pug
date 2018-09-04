@@ -1,6 +1,6 @@
-doctype html
-html
-  head
-    title home
-  body
-    h1 This is a homepage.
+extends layout
+block content
+    h1 #{title}
+    ul
+      each n in news
+        li= n.body
