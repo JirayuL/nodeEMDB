@@ -1,6 +1,7 @@
 extends layout
 block content
     h1 #{title}
-    ul
-      each n in news
-        li= n.body
+    ul.list-group
+      each article, n in news
+        li.list-group-item
+          a(href='/article/' + article._id)= article.title 

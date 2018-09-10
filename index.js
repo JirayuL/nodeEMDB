@@ -14,10 +14,12 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+app.use(express.static(path.join(__dirname, 'public')))
 
-const Article = require('./models/article');
+app.set('views', path.join(__dirname, 'views'))
+app.set('view engine', 'pug')
+
+const Article = require('./models/article')
 
 //Route
 app.get('/', function (req, res) {
@@ -26,57 +28,26 @@ app.get('/', function (req, res) {
       console.log(err);
     } else {
       res.render('index', {
-        title: 'Home',
+        title: 'Articles',
         news: news
       });
     }
-  });
-});
-
-// app.get('/', function (req, res) {
-  //   res.render('index')
-  // })
-  
-app.get('/', function (req, res) {
-  let news = [{
-      id: 1,
-      title: 'news1',
-      body: 'this is news 1.'
-    },
-    {
-      id: 2,
-      title: 'news2',
-      body: 'this is news 2.'
-    },
-    {
-      id: 3,
-      title: 'news3',
-      body: 'this is news 3.'
-    }
-  ];
-  res.render('index', {
-    title: 'Home',
-    news: news
   })
 })
 
-
-// app.get('/news/add', function (req, res) {
-//   res.render('add_news', {
-//     title: 'News'
-//   })
-// })
-app.get('/news/add', function (req, res) {
+app.get('/articles/add', function (req, res) {
   res.render('add_news', {
-    title: 'Add news'
+    title: 'Add Article'
   })
 })
 
-app.post('/news/add', function (req, res) {
-  let news = new Article()
-  news.title = req.body.title
-  news.body = req.body.body
-  news.save(function (err) {
+// Submit POST Route
+app.post('/articles/add', function (req, res) {
+  let article = new Article()
+  article.title = req.body.title
+  article.author = req.body.author
+  article.body = req.body.body
+  article.save(function (err) {
     if (err) {
       console.log(err)
       return
@@ -86,9 +57,58 @@ app.post('/news/add', function (req, res) {
   })
 });
 
+// Update Submit POST Route
+app.post('/articles/edit/:id', function (req, res) {
+  let article = {}
+  article.title = req.body.title
+  article.author = req.body.author
+  article.body = req.body.body
+
+  let query = {_id:req.params.id}
+
+  Article.update(query, article, function (err) {
+    if (err) {
+      console.log(err)
+      return
+    } else {
+      res.redirect('/')
+    }
+  })
+});
+
+// Get single articel
+app.get('/article/:id', function (req, res) {
+  Article.findById(req.params.id, function (err, article) {
+    res.render('article', {
+      article: article
+    })
+  })
+})
+
+// Load Edit Form
+app.get('/article/edit/:id', function (req, res) {
+  Article.findById(req.params.id, function (err, article) {
+    res.render('edit_article', {
+      title: 'Edit Article',
+      article: article
+    })
+  })
+})
+
 
 app.post('/', function (req, res) {
   res.send('you sent a post request.')
+})
+
+app.delete('/article/:id', function(req, res){
+  let query = {_id:req.params.id}
+
+  Article.remove(query, function(err){
+    if(err){
+      console.log(err)
+    }
+    res.send('Success')
+  })
 })
 
 app.listen(3000, () => console.log('Example app listening on port 3000!'))
