@@ -1,10 +1,11 @@
 const express = require('express')
 const path = require('path')
 const app = express()
-const mongoose = require('mongoose');
-const db = mongoose.connection;
+const mongoose = require('mongoose')
+const db = mongoose.connection
 const bodyParser = require('body-parser')
 const Article = require('./models/article')
+const Athlete = require('./models/athletes')
 const expressValidator = require('express-validator')
 const flash = require('connect-flash')
 const session = require('express-session')
@@ -71,21 +72,27 @@ app.set('view engine', 'pug')
 //Route
 app.get('/', function (req, res) {
   Article.find({}, function (err, news) {
-    if (err) {
-      console.log(err);
-    } else {
-      res.render('index', {
-        title: 'Articles',
-        news: news
-      });
-    }
+    Athlete.find({}, (err, athlete) => {
+      if (err) {
+        console.log(err)
+      } else {
+        res.render('index', {
+          title: 'Articles',
+          news: news,
+          athletes_title: "Athletes",
+          athletes: athlete
+        });
+      }
+    })
   })
 })
 
 // Route Files
 let articles = require('./routes/articles')
 let users = require('./routes/users')
+let athletes = require('./routes/athletes')
 app.use('/articles', articles)
+app.use('/athletes', athletes)
 app.use('/users', users)
 
 

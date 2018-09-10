@@ -5,3 +5,9 @@ block content
       each article, n in news
         li.list-group-item
           a(href='/articles/' + article._id)= article.title 
+    hr
+    h1 #{athletes_title}
+    ul.list-group
+      each athlete, i in athletes
+        li.list-group-item
+          a(href='/athletes/'+athlete._id)= athlete.name  
