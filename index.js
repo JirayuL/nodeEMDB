@@ -1,14 +1,18 @@
-var express = require('express')
-var path = require('path')
-var app = express()
+const express = require('express')
+const path = require('path')
+const app = express()
+const mongoose = require('mongoose');
+const db = mongoose.connection;
+const bodyParser = require('body-parser')
+const Article = require('./models/article')
+const expressValidator = require('express-validator')
+const flash = require('connect-flash')
+const session = require('express-session')
 
-var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/nodekb');
-var db = mongoose.connection;
 db.on('open', function () { console.log('connected to MongoDB.') });
 db.on('error', console.error.bind(console, 'connection error:'));
 
-var bodyParser = require('body-parser')
 app.use(bodyParser.urlencoded({
   extended: false
 }))
@@ -16,10 +20,40 @@ app.use(bodyParser.json())
 
 app.use(express.static(path.join(__dirname, 'public')))
 
+// Express Session Middleware
+app.use(session({
+  secret: 'keyboard cat',
+  resave: true,
+  saveUninitialized: true
+}))
+
+// Express Message Middleware
+app.use(require('connect-flash')())
+app.use(function (req, res, next) {
+  res.locals.message = require('express-messages')(req, res)
+  next()
+})
+
+// Express Validator Middleware
+app.use(expressValidator({
+  errorFormatter: function(param, msg, value) {
+    var namespace = param.split('.')
+    , root = namespace.shift()
+    , formParam = root
+
+    while(namespace.length) {
+      formParam += '[' + namespace.shift() + ']'
+    }
+    return {
+      param: formParam,
+      msg: msg,
+      value: value
+    }
+  }
+}))
+
 app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'pug')
-
-const Article = require('./models/article')
 
 //Route
 app.get('/', function (req, res) {
@@ -35,80 +69,9 @@ app.get('/', function (req, res) {
   })
 })
 
-app.get('/articles/add', function (req, res) {
-  res.render('add_news', {
-    title: 'Add Article'
-  })
-})
+// Route Files
+let articles = require('./routes/articles')
+app.use('/articles', articles)
 
-// Submit POST Route
-app.post('/articles/add', function (req, res) {
-  let article = new Article()
-  article.title = req.body.title
-  article.author = req.body.author
-  article.body = req.body.body
-  article.save(function (err) {
-    if (err) {
-      console.log(err)
-      return
-    } else {
-      res.redirect('/')
-    }
-  })
-});
-
-// Update Submit POST Route
-app.post('/articles/edit/:id', function (req, res) {
-  let article = {}
-  article.title = req.body.title
-  article.author = req.body.author
-  article.body = req.body.body
-
-  let query = {_id:req.params.id}
-
-  Article.update(query, article, function (err) {
-    if (err) {
-      console.log(err)
-      return
-    } else {
-      res.redirect('/')
-    }
-  })
-});
-
-// Get single articel
-app.get('/article/:id', function (req, res) {
-  Article.findById(req.params.id, function (err, article) {
-    res.render('article', {
-      article: article
-    })
-  })
-})
-
-// Load Edit Form
-app.get('/article/edit/:id', function (req, res) {
-  Article.findById(req.params.id, function (err, article) {
-    res.render('edit_article', {
-      title: 'Edit Article',
-      article: article
-    })
-  })
-})
-
-
-app.post('/', function (req, res) {
-  res.send('you sent a post request.')
-})
-
-app.delete('/article/:id', function(req, res){
-  let query = {_id:req.params.id}
-
-  Article.remove(query, function(err){
-    if(err){
-      console.log(err)
-    }
-    res.send('Success')
-  })
-})
 
 app.listen(3000, () => console.log('Example app listening on port 3000!'))
